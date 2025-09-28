@@ -17,7 +17,7 @@ cd MYOD
 3. Make the install script executable and run it
 ```bash
 chmod +x install.sh
-sudo ./install.sh
+./install.sh
 ```
 
 4. Reboot the machine
