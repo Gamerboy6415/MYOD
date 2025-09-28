@@ -9,7 +9,7 @@ What you need:
 
 1. Install Ubuntu Server. You MUST make sure the username is "main". If you use a different username you must modify the scripts to use it.
 
-2. Clone this repository
+2. Login and clone this repository
 ```bash
 git clone https://github.com/playsamay4/MYOD.git
 cd MYOD
@@ -26,9 +26,11 @@ sudo reboot
 ```
 
 After the system reboots, it should automatically display the alert renderer.
-Make sure the system is connected to the internet. Press the "i" key to display the IP address of the machine.
-You can access the control panel by navigating to `http://<IP_ADDRESS>:5000` in your web browser. QuantumENDEC can be accessed at `http://<IP_ADDRESS>:8050`. Default password is 'hackme', you should change it immediately.
+
+* Make sure the system is connected to the internet. Press the "i" key to display the IP address of the machine.
+* You can access the control panel by navigating to `http://<IP_ADDRESS>:5000` in your web browser. QuantumENDEC can be accessed at `http://<IP_ADDRESS>:8050`. Default password is 'hackme', you should change it immediately.
 The control panel is mostly unfinished right now
+* **Make sure to enable audio output and input within QuantumENDEC settings, they should be set to the 'pulse' setting.**
 
 # License
 This project is licensed under the GNU General Public License v3.0 License - see the [LICENSE](LICENSE.md) file for details

@@ -133,6 +133,13 @@ tee /home/${CURRENT_USER}/.xinitrc > /dev/null <<'EOF'
 #!/bin/bash
 cd ~/dasdec
 
+# Wait a couple of seconds for the PulseAudio server to be fully ready
+sleep 2
+
+# Unmute the default audio output and set volume to 100%
+pactl set-sink-mute @DEFAULT_SINK@ 0
+pactl set-sink-volume @DEFAULT_SINK@ 100%
+
 # Set connected display to 720p resolution
 DISPLAY_OUT=$(xrandr | grep " connected" | awk '{ print $1 }' | head -n1)
 xrandr --output "$DISPLAY_OUT" --mode 1280x720
