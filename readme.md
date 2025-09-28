@@ -11,8 +11,8 @@ What you need:
 
 2. Clone this repository
 ```bash
-git clone https://github.com/playsamay4/myod.git
-cd myod
+git clone https://github.com/playsamay4/MYOD.git
+cd MYOD
 ```
 3. Make the install script executable and run it
 ```bash
