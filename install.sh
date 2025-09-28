@@ -98,6 +98,8 @@ EOF
 
 # chown -R ${MAIN_USER}:${MAIN_USER} "${HOME_DIR}/.config/systemd/user"
 
+chmod +x "${HOME_DIR}/QuantumENDEC/start.sh"
+
 systemctl --user daemon-reload
 systemctl --user enable endec.service
 
