@@ -17,7 +17,7 @@ cd MYOD
 3. Make the install script executable and run it
 ```bash
 chmod +x install.sh
-sudo ./install.sh
+./install.sh
 ```
 
 4. Reboot the machine
@@ -31,5 +31,5 @@ You can access the control panel by navigating to `http://<IP_ADDRESS>:5000` in 
 The control panel is mostly unfinished right now
 
 # License
-This project is licensed under the GNU General Public License v3.0 License - see the [LICENSE](LICENSE) file for details
+This project is licensed under the GNU General Public License v3.0 License - see the [LICENSE](LICENSE.md) file for details
 This project contains a modified version of the original [QDEC by ApatheticDELL](https://github.com/ApatheticDELL/QDEC)
