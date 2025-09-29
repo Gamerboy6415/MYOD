@@ -19,6 +19,7 @@ cd MYOD
 chmod +x install.sh
 ./install.sh
 ```
+Do not run the script with sudo, it will fail if you do. Deleting the QuantumENDEC and dasdec folders in the home directory and recloning will allow you to rerun the script.
 
 4. Reboot the machine
 ```bash
