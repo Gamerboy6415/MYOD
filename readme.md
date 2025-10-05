@@ -8,7 +8,7 @@ What you need:
 # Installation
 
 1. Download the repo and open the folder
-
+2. in both folders, do "pip install -r requirements.txt" in 2 terminals, incase you get a error on qdec when starting, try "pip uninstall urllib3" then "pip install urllib3"
 
 * Make sure the system is connected to the internet. Press the "i" key to display the IP address of the machine.
 * You can access the control panel by navigating to `http://<IP_ADDRESS>:8050` in your web browser. QuantumENDEC can be accessed at `http://<IP_ADDRESS>:5000`. Default password is 'hackme', you should change it immediately.
