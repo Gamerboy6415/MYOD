@@ -77,7 +77,7 @@ def clear_alert():
 
 
 def run_flask():
-    app.run(debug=False, host="0.0.0.0", port=5000, use_reloader=False)  # VERY IMPORTANT: Turn off reloader
+    app.run(debug=False, host="0.0.0.0", port=8050, use_reloader=False)  # VERY IMPORTANT: Turn off reloader
 
 def start_control_panel(queue):
     """Starts the Flask control panel in a separate thread.
@@ -88,4 +88,4 @@ def start_control_panel(queue):
     flask_thread = threading.Thread(target=run_flask)
     flask_thread.daemon = True
     flask_thread.start()
-    print("Flask control panel running at http://localhost:5000")
+    print("Flask control panel running at http://localhost:8050")

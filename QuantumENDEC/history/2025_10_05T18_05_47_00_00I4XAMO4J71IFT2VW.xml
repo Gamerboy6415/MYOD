@@ -1,0 +1,29 @@
+
+            <alert>
+                <identifier>4XAMO4J71IFT2VW</identifier>
+                <sender>QDEC Internal</sender>
+                <sent>2025-10-05T18:05:47-00:00</sent>
+                <status>Actual</status>
+                <msgType>Alert</msgType>
+                <source>QDEC Self Alert Orginator</source>
+                <scope>Public</scope>
+                <info>
+                    <language>en-US</language>
+                    <category>Admin</category>
+                    <event>a Required Weekly Test</event>
+                    <urgency>Unknown</urgency>
+                    <severity>Unknown</severity>
+                    <certainty>Unknown</certainty>
+                    <effective>2025-10-05T18:05:47-00:00</effective>
+                    <expires>2025-10-05T19:05:47-00:00</expires>
+                    <eventCode><valueName>SAME</valueName><value>RWT</value></eventCode>
+                    <senderName>QDEC Internal</senderName>
+                    <headline>a Required Weekly Test</headline>
+                    <description></description>
+                    <parameter><valueName>layer:SOREM:1.0:Broadcast_Text</valueName><value></value></parameter>
+                    <parameter><valueName>EAS-ORG</valueName><value>EAS</value></parameter>
+                    <area><areaDesc>Harris, TX</areaDesc><geocode><valueName>SAME</valueName><value>048201</value></geocode></area>
+                </info>
+                
+            </alert>
+            

@@ -19,9 +19,9 @@ import subprocess
 pygame.init()
 
 # Screen dimensions
-screen_width = 1280
+screen_width = 1000
 screen_height = 720
-pygame.display.set_caption("dasdec renderer")
+pygame.display.set_caption("DASDEC")
 
 if os.name == "posix":
     screen = pygame.display.set_mode((screen_width, screen_height), pygame.FULLSCREEN)
@@ -87,7 +87,7 @@ except FileNotFoundError:
 # Default page
 defaultPages = [
     [
-        "Emergency Alert Details",
+        "EMERGENCY ALERT DETAILS",
         "", "", "", "", "", "", "", "", "", "", "", "1/1"
     ]
 ]
@@ -148,7 +148,7 @@ pages = defaultPages # starts with the Alert pages, press 'd' to switch to defau
 
 num_pages = len(pages)
 current_page = 0
-page_display_duration = 5  # Seconds to display each page
+page_display_duration = 7  # Seconds to display each page
 
 last_page_switch_time = time.time()  # Track when the page was last switched
 
@@ -180,7 +180,7 @@ def audio_finished_callback():
 import re
 
 def format_eas_message(eas_text):
-    MAX_LINE_LENGTH = 35
+    MAX_LINE_LENGTH = 32
     MAX_LINES_PER_PAGE = 13
     
     # Ensure areas are split into separate lines
@@ -305,7 +305,7 @@ def handle_commands():
                 last_page_switch_time = time.time()
 
             elif command[0] == "CLEAR_ALERT":
-                print("GUI: Clearing Alert")
+                print("ALERT ENDED")
                 threading.Timer(3.0, lambda: clear_alert()).start()
 
 
@@ -341,16 +341,20 @@ control_panel.start_control_panel(command_queue)
 
 # main loop
 running = True
+cursor_visible = False
+cursor_timer = time.time()
+cursor_blink_interval = 0.3  # seconds
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        elif event.type == pygame.USEREVENT + 1:  # Audio finished event
+        elif event.type == pygame.USEREVENT + 1:
             audio_finished_callback()
-        elif event.type == pygame.KEYDOWN: # Switch Style
-            if event.key == pygame.K_SPACE:  # Press space to switch styles
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
                 current_style_index = (current_style_index + 1) % len(styles)
-                set_style(styles[current_style_index]) # Update global colors
+                set_style(styles[current_style_index])
             elif event.key == pygame.K_ESCAPE:
                 running = False
             elif event.key == pygame.K_i:
@@ -358,77 +362,83 @@ while running:
                 info_display_time = time.time()
                 info_visible = True
 
-
-
-    # Check if it's time to switch to the next page
+    # Handle page switching
     current_time = time.time()
     if current_time - last_page_switch_time >= page_display_duration:
-        current_page = (current_page + 1) % num_pages  # Cycle through pages
+        current_page = (current_page + 1) % num_pages
         last_page_switch_time = current_time
 
-    # ---- Handle commands from the GUI  ----
+    # Handle queued commands
     handle_commands()
 
-    # Clear the screen with margin color
-    screen.fill(margin_color)
+    # ---- Determine mode (idle or alert) ----
+    is_alert_active = pages != defaultPages
 
-    # Calculate the inner rectangle's coordinates with different margins
-    inner_rect_x = margin_width_horizontal
-    inner_rect_y = margin_width_vertical
-    inner_rect_width = screen_width - 2 * margin_width_horizontal
-    inner_rect_height = screen_height - 2 * margin_width_vertical
+    # Clear the screen
+    screen.fill((0, 0, 0))  # Always black background
 
-    # Draw the background color inside the margin
-    pygame.draw.rect(screen, background_color, (inner_rect_x, inner_rect_y, inner_rect_width, inner_rect_height))
+    if is_alert_active:
+        # Draw background and border only if alert active
+        inner_rect_x = margin_width_horizontal
+        inner_rect_y = margin_width_vertical
+        inner_rect_width = screen_width - 2 * margin_width_horizontal
+        inner_rect_height = screen_height - 2 * margin_width_vertical
 
-    # Draw the border
-    pygame.draw.rect(screen, border_color, (inner_rect_x, inner_rect_y, inner_rect_width, inner_rect_height), border_width)
+        # Draw alert background box
+        pygame.draw.rect(screen, background_color, (inner_rect_x, inner_rect_y, inner_rect_width, inner_rect_height))
+        # Draw border
+        pygame.draw.rect(screen, border_color, (inner_rect_x, inner_rect_y, inner_rect_width, inner_rect_height), border_width)
 
-    # Render and blit the text for the current page
-    text_positions = render_text(pages[current_page])  # Get text for current page
-    for text_surface, text_rect in text_positions:
-        screen.blit(text_surface, text_rect)
+        # Draw alert text
+        text_positions = render_text(pages[current_page])
+        for text_surface, text_rect in text_positions:
+            screen.blit(text_surface, text_rect)
+    else:
+        # --- Flashing wide cursor for idle mode ---
+        if time.time() - cursor_timer >= cursor_blink_interval:
+            cursor_visible = not cursor_visible
+            cursor_timer = time.time()
 
+        if cursor_visible:
+            cursor_font = pygame.font.Font("VCREAS_4.5.period.ttf", 0)  # larger font for thickness
+            # Render a wide underscore using a stretched rectangle instead of "_"
+            cursor_surface = pygame.Surface((0, 0))  # width x height
+            cursor_surface.fill((255, 255, 255))
+
+            # Position: top-left corner near where the red border would start
+            cursor_rect = cursor_surface.get_rect(topleft=(margin_width_horizontal, margin_width_vertical + 35))
+            screen.blit(cursor_surface, cursor_rect)
+
+    # Info overlay (unchanged)
     if info_visible:
-        # Hide the overlay after 10 seconds
         if time.time() - info_display_time > 10:
             info_visible = False
         else:
-            # Set up font for the info text
             info_font_size = 28
             try:
                 info_font = pygame.font.Font("luximb.ttf", info_font_size)
             except FileNotFoundError:
                 info_font = pygame.font.Font(None, info_font_size)
 
-            # Calculate overlay size based on number of lines
             line_height = info_font_size + 5
             num_lines = len(info_lines)
             overlay_width = 600
-            overlay_height = 20 + num_lines * line_height + 20  # 20px padding top/bottom
+            overlay_height = 20 + num_lines * line_height + 20
 
             overlay = pygame.Surface((overlay_width, overlay_height), pygame.SRCALPHA)
-            overlay.fill((10, 10, 10, 210)) # Dark, semi-transparent background
+            overlay.fill((10, 10, 10, 210))
 
-            # Render each line of info text onto the overlay
             line_y = 20
             for line in info_lines:
                 text_surf = info_font.render(line, True, (255, 255, 255))
                 overlay.blit(text_surf, (20, line_y))
                 line_y += line_height
 
-            # Position and draw the overlay in the center of the screen
             overlay_x = (screen_width - overlay_width) // 2
             overlay_y = (screen_height - overlay_height) // 2
             screen.blit(overlay, (overlay_x, overlay_y))
-  
 
-    # Update the display
     pygame.display.flip()
+    time.sleep(0.01)
 
-    time.sleep(0.01)  # Small delay to prevent excessive CPU usage
-
-    
-
-# Quit Pygame
 pygame.quit()

@@ -1,0 +1,29 @@
+
+            <alert>
+                <identifier>IQCFVYZGC6BOZ2L</identifier>
+                <sender>QDEC Internal</sender>
+                <sent>2025-10-05T18:56:19-00:00</sent>
+                <status>Actual</status>
+                <msgType>Alert</msgType>
+                <source>QDEC Self Alert Orginator</source>
+                <scope>Public</scope>
+                <info>
+                    <language>en-US</language>
+                    <category>Admin</category>
+                    <event>a Required Weekly Test</event>
+                    <urgency>Unknown</urgency>
+                    <severity>Unknown</severity>
+                    <certainty>Unknown</certainty>
+                    <effective>2025-10-05T18:56:19-00:00</effective>
+                    <expires>2025-10-05T19:56:19-00:00</expires>
+                    <eventCode><valueName>SAME</valueName><value>RWT</value></eventCode>
+                    <senderName>QDEC Internal</senderName>
+                    <headline>a Required Weekly Test</headline>
+                    <description>Broadcast text can be edited here.</description>
+                    <parameter><valueName>layer:SOREM:1.0:Broadcast_Text</valueName><value>Broadcast text can be edited here.</value></parameter>
+                    <parameter><valueName>EAS-ORG</valueName><value>EAS</value></parameter>
+                    <area><areaDesc>The United States</areaDesc><geocode><valueName>SAME</valueName><value>000000-000000-000000-000000-000000-000000-000000-000000-000000-000000-000000-000000-000000-000000-000000-000000-000000-000000</value></geocode></area>
+                </info>
+                
+            </alert>
+            
