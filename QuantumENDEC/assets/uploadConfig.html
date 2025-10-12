@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>QDEC Web Interface</title>
+        <link rel="stylesheet" href="./style.css">
+    </head>
+    <body>
+        <header>
+            <div class="header_logo">
+                <img src="./logo.png" />
+                <h1>QDEC Web Interface</h1>
+            </div>
+            <div class="topnav">
+                <a href="./index.html">Dashboard</a>
+                <a href="./alerts.html">Alerts</a>
+                <a class="active" href="./configuration.html">Configuration</a>
+                <a href="./send.html">Send Alert</a>
+                <a href="./alertLog.html">Alert Log</a>
+                <a href="./change_password.html">Change Access Password</a>
+            </div>
+        </header>
+
+        <main>
+            <h2>Upload configuration file</h2>
+            <form id="uploadForm" enctype="multipart/form-data">
+                <input type="file" id="fileInput" accept=".json" />
+                <button class="button" type="submit">Upload JSON</button>
+            </form>
+            <a class="button" href="./configuration.html">Go back</a>
+        </main>
+    
+        <script>
+            document.getElementById('uploadForm').addEventListener('submit', async (event) => {
+                event.preventDefault(); // Prevent default form submission
+
+                const fileInput = document.getElementById('fileInput');
+                if (fileInput.files.length === 0) {
+                    alert('Please select a file to upload.');
+                    return;
+                }
+
+                const file = fileInput.files[0];
+                if (file.type !== 'application/json') {
+                    alert('Only JSON files are accepted.');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('file', file);
+
+                try {
+                    const response = await fetch('/upload_config', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        alert('File uploaded successfully!')
+                        window.location.href = './configuration.html'; // Redirect on success
+                    } else {
+                        alert('File upload failed.');
+                    }
+                } catch (error) {
+                    console.error('Error uploading file:', error);
+                    alert('An error occurred while uploading the file.');
+                }
+            });
+        </script>
+    </body>
+</html>
