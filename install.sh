@@ -153,4 +153,5 @@ echo ""
 echo "--- Installation Complete! ---"
 echo "The system is now configured."
 echo "A reboot is required to apply all changes (especially group memberships and auto-login)."
-echo "Please run the 'reboot' command now."
+echo "Please run the 'reboot' command now if it doesn't auto restart."
+sudo reboot
