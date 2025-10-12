@@ -1,45 +1,24 @@
-# main_pygame.py
-import pygame
+import os
 import time
 import threading
 import queue
-import control_panel 
-import os
+import control_panel
+import pygame
 from EAS2Text import EAS2Text
-import re
 
-import socket
-import subprocess
+# Command queue
+command_queue = queue.Queue()
 
+# Pages
+defaultPages = [["EMERGENCY ALERT DETAILS", "", "", "", "", "", "", "", "", "", "", "", "1/1"]]
+alertPages = []
 
+# Page and style tracking
+current_page = 0
+num_pages = len(defaultPages)
+page_display_duration = 7
 
-
-
-# Initialize Pygame
-pygame.init()
-
-# Screen dimensions
-screen_width = 1000
-screen_height = 720
-pygame.display.set_caption("DASDEC")
-
-if os.name == "posix":
-    screen = pygame.display.set_mode((screen_width, screen_height), pygame.FULLSCREEN)
-    os.environ["SDL_AUDIODRIVER"] = "pulseaudio"
-    # os.system("sudo systemctl start endec.service")
-    
-else:
-    screen = pygame.display.set_mode((screen_width, screen_height))
-
-pygame.mouse.set_visible(False)
-    
-
-# Constants for commands (avoiding enums)
-SWITCH_STYLE = "SWITCH_STYLE"
-SWITCH_PAGE = "SWITCH_PAGE"
-QUIT = "QUIT"
-
-# --- style Definitions  ---
+# Styles
 class Style:
     def __init__(self, background, text, border, margin, font):
         self.background = background
@@ -48,397 +27,135 @@ class Style:
         self.margin = margin
         self.font = font
 
-style1 = Style((46, 50, 81), (255, 255, 255), (108, 29, 35), (0, 0, 0), "luximb.ttf")  # Original
-style2 = Style((0, 0, 0), (255, 255, 255), (0, 0, 0), (0, 0, 0), "luximb.ttf")        # All Black/White
-style3 = Style((0, 1, 228), (255, 255, 255), (0, 1, 228), (0, 0, 0), "arialbd.ttf") # Black Background, Blue Box/Border
+style1 = Style((46, 50, 81), (255, 255, 255), (108, 29, 35), (0, 0, 0), "luximb.ttf")
+styles = [style1]
+current_style_index = 0
 
-styles = [style1, style2, style3]  # List of styles
-current_style_index = 0          # Start with the first style
-
-def set_style(style):
-    global background_color, text_color, border_color, margin_color, font
-    background_color = style.background
-    text_color = style.text
-    border_color = style.border
-    margin_color = style.margin
-    try:
-        font = pygame.font.Font(style.font, font_size)
-    except FileNotFoundError:
-        print(f"Font '{style.font}' not found. Using default font.")
-        font = pygame.font.Font(None, font_size)
-
-# --- End style Definitions ---
-
-# Margin widths
-margin_width_vertical = 40  # Top and bottom margin
-margin_width_horizontal = 120  # Left and right margin
-
-# Border width
-border_width = 5
-
-# Font
+# Initialize Pygame hidden at startup
+pygame.init()
+screen_width, screen_height = 1000, 720
+# Do not create window yet
+screen = None
+pygame.font.init()
 font_size = 40
 try:
-    font = pygame.font.Font("luximb.ttf", font_size)
-except FileNotFoundError:
-    print("Font 'luximb.ttf' not found. Using default font.")
+    font = pygame.font.Font(style1.font, font_size)
+except:
     font = pygame.font.Font(None, font_size)
 
-# Default page
-defaultPages = [
-    [
-        "EMERGENCY ALERT DETAILS",
-        "", "", "", "", "", "", "", "", "", "", "", "1/1"
-    ]
-]
-
-
-# Text content for each page
-#test example
-alertPages = [
-    [
-        "THE PRIMARY ENTRY POINT EAS SYSTEM",
-        "has issued A NATIONAL PERIODIC TEST",
-        "for the following counties or",
-        "areas:",
-        "United States;",
-        "District of Columbia, DC;",
-        "at 1:20 PM",
-        "on AUG 7, 2019",
-        "Effective until 1:50 PM.",
-        "Message from WBAP 1.",
-        "",
-        "",
-        "1/3",
-    ],
-    [
-        "This is page 2 of the EAS test.",
-        "This test is designed to ensure the",
-        "Emergency Alert System is functioning",
-        "correctly.",
-        "",
-        "Remember, this is only a test.",
-        "",
-        "More information can be found at",
-        "www.fcc.gov/eas",
-        "",
-        "",
-        "",
-        "2/3",
-    ],
-    [
-        "This is page 3 of the EAS test.",
-        "In a real emergency, follow the",
-        "instructions provided by local",
-        "authorities.",
-        "",
-        "Stay safe and be prepared.",
-        "",
-        "Thank you for your attention.",
-        "",
-        "",
-        "",
-        "",
-        "3/3",
-    ],
-]
-
-pages = defaultPages # starts with the Alert pages, press 'd' to switch to default
-
-
-num_pages = len(pages)
-current_page = 0
-page_display_duration = 7  # Seconds to display each page
-
-last_page_switch_time = time.time()  # Track when the page was last switched
-
-audio_finished = False
-
-info_visible = False
-info_display_time = 0
-info_lines = []
-
-def render_text(lines):
-    """Renders the given lines of text to surfaces and rects."""
-    text_positions = []
-    line_spacing = 5
-    start_y = 50
-
-    for i, line in enumerate(lines):
-        text_surface = font.render(line, True, text_color)
-        text_rect = text_surface.get_rect(centerx=screen_width // 2, y=start_y + i * (font_size + line_spacing))
-        text_positions.append((text_surface, text_rect))
-    return text_positions
-
-def audio_finished_callback():
-    """Callback function executed when the audio finishes playing."""
-    global audio_finished
-    audio_finished = True
-    print("Audio finished playing.")
-
-
-import re
-
+# Helper to format pages
 def format_eas_message(eas_text):
+    import re
     MAX_LINE_LENGTH = 32
     MAX_LINES_PER_PAGE = 13
-    
-    # Ensure areas are split into separate lines
     eas_text = re.sub(r'; ', '\n', eas_text)
     lines = eas_text.split('\n')
     formatted_lines = []
-    
     for line in lines:
         words = line.split()
         current_line = ""
-        
         for word in words:
             if len(current_line) + len(word) + 1 <= MAX_LINE_LENGTH:
                 current_line += (" " if current_line else "") + word
             else:
                 formatted_lines.append(current_line)
                 current_line = word
-        
         if current_line:
             formatted_lines.append(current_line)
-    
-    # Split into pages
     pages = []
     total_pages = (len(formatted_lines) + (MAX_LINES_PER_PAGE - 1) - 1) // (MAX_LINES_PER_PAGE - 1)
-    
     for i in range(0, len(formatted_lines), MAX_LINES_PER_PAGE - 1):
         page_content = formatted_lines[i:i + (MAX_LINES_PER_PAGE - 1)]
         while len(page_content) < (MAX_LINES_PER_PAGE - 1):
-            page_content.append("")  # Fill empty lines if necessary
-        page_content.append(f"{len(pages) + 1}/{total_pages}")
+            page_content.append("")
+        page_content.append(f"{len(pages)+1}/{total_pages}")
         pages.append(page_content)
-    
     return pages
 
-def get_system_info():
-    """Gathers network information and returns it as a list of strings."""
-    lines = []
-    try:
-        hostname = socket.gethostname()
-        lines.append(f"Hostname: {hostname}")
-        # reliable way to get the primary IP address
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.settimeout(0.1)
-            s.connect(("8.8.8.8", 80)) # Connect to a public DNS server
-            ip_address = s.getsockname()[0]
-        lines.append(f"IP Address: {ip_address}")
-    except Exception:
-        lines.append("Network Info: Could not determine IP.")
-
-    # Get gateway on Linux systems
-    if os.name == "posix":
-        try:
-            result = subprocess.check_output("ip route | grep default", shell=True, text=True)
-            gateway = result.split(' ')[2]
-            lines.append(f"Gateway: {gateway}")
-        except Exception:
-            lines.append("Gateway: N/A")
-    return lines
-    
-
-# ----  Command Queue and Handling  ----
-
-command_queue = queue.Queue()
-
+# Handle commands
 def handle_commands():
-    global current_style_index, pages, num_pages, current_page
+    global alertPages, current_page, num_pages
     try:
         while True:
-            command = command_queue.get_nowait()  # Non-blocking get
-
-            if command[0] == SWITCH_STYLE:
-                current_style_index = (command[1]) % len(styles)
-                set_style(styles[current_style_index])
-                print(f"GUI: Switched to style {current_style_index}")
-
-            elif command[0] == SWITCH_PAGE:
-                if command[1] == "default":
-                    pages = defaultPages
-                elif command[1] == "alert":
-                    pages = alertPages
-                num_pages = len(pages)
-                current_page = 0
-                print(f"GUI: Switched to page {command[1]}")
-
-            elif command[0] == "ORIGINATE_ALERT":
-                #Do not use
-                pass
-
-            elif command[0] == "DISPLAY_ALERT":
-                print("GUI: Displaying Alert")
-                try: 
+            command = command_queue.get_nowait()
+            if command[0] == "DISPLAY_ALERT":
+                try:
                     msg = EAS2Text(command[1]["headers"])
-                except:
-                    print("Error parsing EAS message")
-                    return
-
-                desc = command[1]["description"]
-
-                orgText = msg.orgText
-                orgText = orgText.replace("An EAS Participant", "A broadcast or cable system")
-
-                msgFrom = ".\n"
-
-                if "Message from" not in desc:
-                    msgFrom = ".\nMessage from "+msg.callsign+".\n"
-
-                text = (str.upper(orgText) + 
-                        "\nhas issued " + str.upper(msg.evntText) + 
-                        "\nfor the following counties or\nareas:\n" + 
-                        ";\n".join(msg.FIPSText) + 
-                        ";\nat " + msg.startTime.strftime("%I:%M %p") + 
-                        "\non " + str.upper(msg.startTime.strftime("%b %d, %Y")) + 
-                        "\nEffective until " + 
-                        msg.endTime.strftime("%I:%M %p") + 
-                        msgFrom + 
-                        desc)
-                print(text)
-                pages = format_eas_message(text)
-                print(pages)
-                num_pages = len(pages)
-                current_page = 0
-                last_page_switch_time = time.time()
-
+                    desc = command[1]["description"]
+                    orgText = msg.orgText.replace("An EAS Participant", "A broadcast or cable system")
+                    msgFrom = ".\n"
+                    if "Message from" not in desc:
+                        msgFrom = ".\nMessage from " + msg.callsign + ".\n"
+                    text = (str.upper(orgText) + 
+                            "\nhas issued " + str.upper(msg.evntText) + 
+                            "\nfor the following counties or\nareas:\n" + 
+                            ";\n".join(msg.FIPSText) + 
+                            ";\nat " + msg.startTime.strftime("%I:%M %p") + 
+                            "\non " + str.upper(msg.startTime.strftime("%b %d, %Y")) + 
+                            "\nEffective until " + 
+                            msg.endTime.strftime("%I:%M %p") + 
+                            msgFrom + desc)
+                    alertPages = format_eas_message(text)
+                    num_pages = len(alertPages)
+                    current_page = 0
+                    return "ALERT_STARTED"
+                except Exception as e:
+                    print("Error parsing EAS message:", e)
             elif command[0] == "CLEAR_ALERT":
-                print("ALERT ENDED")
-                threading.Timer(3.0, lambda: clear_alert()).start()
-
-
-
-                
-            elif command[0] == QUIT:
-              print("GUI: Quitting application")
-              pygame.quit()
-              exit()
-            elif command[0] == "SHUTDOWN":
-              print("GUI: Shutting down system")
-              os.system("sudo shutdown now")
-
-              
-
-            command_queue.task_done() # Mark as handled
+                return "ALERT_CLEARED"
+            command_queue.task_done()
     except queue.Empty:
-        pass # No commands, continue
+        pass
+    return None
 
-
-def clear_alert():
-    global pages, num_pages, current_page, last_page_switch_time
-    pages = defaultPages
-    num_pages = len(pages)
-    current_page = 0
-    last_page_switch_time = time.time()
-
-# Initialize colors based on the starting style
-set_style(styles[current_style_index])
-
-#start Control Panel in a thread.
+# Start control panel
 control_panel.start_control_panel(command_queue)
 
-# main loop
-running = True
-cursor_visible = False
-cursor_timer = time.time()
-cursor_blink_interval = 0.3  # seconds
+# Main loop
+while True:
+    action = handle_commands()
+    if action == "ALERT_STARTED":
+        # Create windowed screen only when alert starts
+        screen = pygame.display.set_mode((screen_width, screen_height))
+        pygame.display.set_caption("DASDEC")
+        pygame.mouse.set_visible(False)
+        last_page_switch_time = time.time()
+        running = True
 
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        elif event.type == pygame.USEREVENT + 1:
-            audio_finished_callback()
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                current_style_index = (current_style_index + 1) % len(styles)
-                set_style(styles[current_style_index])
-            elif event.key == pygame.K_ESCAPE:
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+
+            # Page switching
+            if time.time() - last_page_switch_time >= page_display_duration:
+                current_page = (current_page + 1) % num_pages
+                last_page_switch_time = time.time()
+
+            # Check for cleared alert
+            action2 = handle_commands()
+            if action2 == "ALERT_CLEARED":
                 running = False
-            elif event.key == pygame.K_i:
-                info_lines = get_system_info()
-                info_display_time = time.time()
-                info_visible = True
+                break
 
-    # Handle page switching
-    current_time = time.time()
-    if current_time - last_page_switch_time >= page_display_duration:
-        current_page = (current_page + 1) % num_pages
-        last_page_switch_time = current_time
+            # Draw alert
+            screen.fill((0, 0, 0))
+            inner_rect_x, inner_rect_y = 120, 40
+            inner_rect_width, inner_rect_height = screen_width - 240, screen_height - 80
+            pygame.draw.rect(screen, style1.background, (inner_rect_x, inner_rect_y, inner_rect_width, inner_rect_height))
+            pygame.draw.rect(screen, style1.border, (inner_rect_x, inner_rect_y, inner_rect_width, inner_rect_height), 5)
 
-    # Handle queued commands
-    handle_commands()
+            line_spacing = 5
+            for i, line in enumerate(alertPages[current_page]):
+                text_surface = font.render(line, True, style1.text)
+                text_rect = text_surface.get_rect(centerx=screen_width // 2, y=inner_rect_y + i * (font_size + line_spacing))
+                screen.blit(text_surface, text_rect)
 
-    # ---- Determine mode (idle or alert) ----
-    is_alert_active = pages != defaultPages
+            pygame.display.flip()
+            time.sleep(0.01)
 
-    # Clear the screen
-    screen.fill((0, 0, 0))  # Always black background
-
-    if is_alert_active:
-        # Draw background and border only if alert active
-        inner_rect_x = margin_width_horizontal
-        inner_rect_y = margin_width_vertical
-        inner_rect_width = screen_width - 2 * margin_width_horizontal
-        inner_rect_height = screen_height - 2 * margin_width_vertical
-
-        # Draw alert background box
-        pygame.draw.rect(screen, background_color, (inner_rect_x, inner_rect_y, inner_rect_width, inner_rect_height))
-        # Draw border
-        pygame.draw.rect(screen, border_color, (inner_rect_x, inner_rect_y, inner_rect_width, inner_rect_height), border_width)
-
-        # Draw alert text
-        text_positions = render_text(pages[current_page])
-        for text_surface, text_rect in text_positions:
-            screen.blit(text_surface, text_rect)
-    else:
-        # --- Flashing wide cursor for idle mode ---
-        if time.time() - cursor_timer >= cursor_blink_interval:
-            cursor_visible = not cursor_visible
-            cursor_timer = time.time()
-
-        if cursor_visible:
-            cursor_font = pygame.font.Font("VCREAS_4.5.period.ttf", 0)  # larger font for thickness
-            # Render a wide underscore using a stretched rectangle instead of "_"
-            cursor_surface = pygame.Surface((0, 0))  # width x height
-            cursor_surface.fill((255, 255, 255))
-
-            # Position: top-left corner near where the red border would start
-            cursor_rect = cursor_surface.get_rect(topleft=(margin_width_horizontal, margin_width_vertical + 35))
-            screen.blit(cursor_surface, cursor_rect)
-
-    # Info overlay (unchanged)
-    if info_visible:
-        if time.time() - info_display_time > 10:
-            info_visible = False
-        else:
-            info_font_size = 28
-            try:
-                info_font = pygame.font.Font("luximb.ttf", info_font_size)
-            except FileNotFoundError:
-                info_font = pygame.font.Font(None, info_font_size)
-
-            line_height = info_font_size + 5
-            num_lines = len(info_lines)
-            overlay_width = 600
-            overlay_height = 20 + num_lines * line_height + 20
-
-            overlay = pygame.Surface((overlay_width, overlay_height), pygame.SRCALPHA)
-            overlay.fill((10, 10, 10, 210))
-
-            line_y = 20
-            for line in info_lines:
-                text_surf = info_font.render(line, True, (255, 255, 255))
-                overlay.blit(text_surf, (20, line_y))
-                line_y += line_height
-
-            overlay_x = (screen_width - overlay_width) // 2
-            overlay_y = (screen_height - overlay_height) // 2
-            screen.blit(overlay, (overlay_x, overlay_y))
-
-    pygame.display.flip()
-    time.sleep(0.01)
-
-pygame.quit()
+        # Close window and return to desktop/login
+        pygame.display.quit()
+        print("Alert ended, window hidden.")
+    time.sleep(0.5)
