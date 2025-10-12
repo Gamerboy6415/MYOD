@@ -1,0 +1,104 @@
+body {
+    background-color: #101010;
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+    padding-left: 3vw;
+    padding-right: 3vw;
+    padding-top: 1vh;
+    padding-bottom: 1vh;
+}
+
+.topnav {
+    overflow: hidden;
+    background-color: #333;
+}
+
+.topnav a {
+    float: left;
+    color: #f2f2f2;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+    font-size: 17px;
+}
+
+.topnav a:hover {
+    background-color: #ddd;
+    color: black;
+}
+
+.topnav a.active {
+    background-color: #b93434;
+    color: white;
+}
+
+header {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    padding-bottom: 3vh;
+}
+
+footer {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    padding-top: 3vh;
+    padding-bottom: 3vh;
+}
+
+.status_box {
+    width: 100%;
+    height: 4vw;
+    margin: 5px;
+    background-color: limegreen;
+    color: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: large;
+}
+
+.button {
+    background-color: #b93434;
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+}
+.button:hover { background-color: #a50000; }
+.button:active { background-color: #d04444; }
+
+.activeAlerts-container {
+    font-family: sans-serif;
+}
+.activeAlerts-list {
+    list-style-type: none;
+    padding: 0;
+}
+.activeAlert-item {
+    margin: 15px 0;
+    padding: 10px;
+    background-color: #242d3b;
+    border-radius: 5px;
+}
+
+.header_logo {
+    display: flex;
+    flex-direction: row;
+    height: 90px;
+    column-gap: 15px;
+    padding: 15px;
+    justify-content: center;
+    
+}
+
+.header_logo h1 {
+    align-items: center;
+    display: flex;
+}
